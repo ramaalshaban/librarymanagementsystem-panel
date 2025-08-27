@@ -1,0 +1,126 @@
+import { useState } from "react";
+
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+
+import { JsonResponse } from "../../../../components/json-response/index.js";
+import { TableResponse } from "../../../../components/table-response/index.js";
+import analyticsAxios, {
+  analyticsEndpoints,
+} from "../../../../lib/analytics-axios.js";
+
+export default function AnalyticsDeleteAnalyticSnapshotApiPage() {
+  const [view, setView] = useState("Table");
+  const [deletedAnalyticsnapshot, setDeletedAnalyticsnapshot] = useState(null);
+  const [analyticsnapshotLoading, setAnalyticsnapshotLoading] = useState(false);
+
+  const [error, setError] = useState(null);
+
+  const [inputAnalyticSnapshotId, setInputAnalyticSnapshotId] = useState("");
+
+  const handleDeleteAnalyticsnapshot = async () => {
+    try {
+      setAnalyticsnapshotLoading(true);
+      const response = await analyticsAxios.delete(
+        analyticsEndpoints.analyticsnapshot.deleteAnalyticSnapshot.replace(
+          ":analyticSnapshotId",
+          inputAnalyticSnapshotId,
+        ),
+      );
+      setError(null);
+      setDeletedAnalyticsnapshot(null);
+      console.info("RESPONSE", response);
+      setDeletedAnalyticsnapshot(response.data.analyticsnapshot);
+      setAnalyticsnapshotLoading(false);
+
+      setInputAnalyticSnapshotId("");
+    } catch (ex) {
+      console.error(ex);
+      setError(ex);
+      setAnalyticsnapshotLoading(false);
+    }
+  };
+
+  return (
+    <Box>
+      <Box marginY="2rem">
+        <Box marginBottom="2rem">
+          <Typography variant="h4" marginBottom="1.5rem">
+            DELETE
+          </Typography>
+
+          <Box component="div" gap="1rem" display="flex" key="0">
+            <Box minWidth="35%">
+              <TextField
+                size="small"
+                variant="outlined"
+                fullWidth
+                label="analyticSnapshotId"
+                value={inputAnalyticSnapshotId}
+                onChange={(e) => setInputAnalyticSnapshotId(e.target.value)}
+              />
+            </Box>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleDeleteAnalyticsnapshot}
+              disabled={!inputAnalyticSnapshotId || analyticsnapshotLoading}
+            >
+              DELETE
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+      <Divider />
+
+      {!analyticsnapshotLoading && (error || deletedAnalyticsnapshot) && (
+        <Box paddingTop="2rem">
+          <Box
+            display="flex"
+            flexDirection="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="subtitle1">
+              STATUS:{" "}
+              <Typography
+                component="span"
+                variant="subtitle1"
+                color={error ? "error" : "success"}
+                display="inline"
+              >
+                {error ? error.status : "200"}
+              </Typography>
+            </Typography>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+              <ToggleButtonGroup
+                color="standard"
+                value={view}
+                exclusive
+                onChange={(_, val) => val && setView(val)}
+              >
+                <ToggleButton value="Table" sx={{ paddingX: "2rem" }}>
+                  Table
+                </ToggleButton>
+                <ToggleButton value="JSON" sx={{ paddingX: "2rem" }}>
+                  JSON
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          </Box>
+          <Box>
+            {view === "Table" ? (
+              <TableResponse content={deletedAnalyticsnapshot} error={error} />
+            ) : (
+              <JsonResponse content={deletedAnalyticsnapshot || error} />
+            )}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
